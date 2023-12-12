@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コース管理</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@300&family=Noto+Sans+JP:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/common.css">
+</head>
+<body>
+    <el-container id="app" class="manage" v-cloak>
+        <header class="common-header">
+            <div class="caption">
+                ひかりITスクール
+            </div>
+            <div>
+                管理者
+            </div>
+        </header>
+        <el-container class="side-menu-container">
+            <el-aside width="200px" class="side-menu">
+                <el-menu default-active="1" class="el-menu-vertical-demo">
+                    <el-menu-item index="1">コース管理</el-menu-item>
+                    <el-menu-item index="2" @click="goTeacherManage">教員管理</el-menu-item>
+                    <el-menu-item index="3">学生管理</el-menu-item>
+                </el-menu>
+            </el-aside>
+        </el-container>
+
+        <el-container class="comm-main">
+            <el-main>
+                <div class="search-container">
+                    <div class="search-item">
+                        <label>コース名</label>
+                        <el-input
+                            class="search-input"
+                            v-model="searchInfo.className"
+                            clearable>
+                        </el-input>
+                    </div>
+                    <div class="search-item">
+                        <label>カテゴリー</label>
+                        <el-select 
+                            v-model="searchInfo.categoryId" 
+                            class="search-input"
+                            clearable
+                        >
+                            <el-option
+                              v-for="item in category"
+                              :key="item.value"
+                              :label="item.label"
+                              :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </div>
+                    <div class="search-item">
+                        <label class="teacher-label">先&nbsp;&nbsp;生</label>
+                        <el-select 
+                            v-model="searchInfo.teacherId" 
+                            class="search-input"
+                            clearable
+                        >
+                            <el-option
+                              v-for="item in teacher"
+                              :key="item.value"
+                              :label="item.label"
+                              :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </div>
+                    <div>
+                        <el-button 
+                            type="primary"
+                            @click="loadData"
+                        >
+                            検索
+                        </el-button>
+                        <el-button type="info">リセット</el-button>
+                    </div>
+                    
+                </div>
+                <div class="course-container">
+                    <el-card class="box-card course-item" v-for="course in data">
+                        <div>コース名： {{course.className}}</div>
+                        <div>カテゴリー： {{course.categoryName}}</div>
+                        <div>先生： {{course.teacherName}}</div>
+                        <div>プロフィール：{{course.description}}</div>
+                        <div>値段: {{course.price}}円</div>
+                        <div>人数制限: {{course.studentsLimit}}人</div>
+                        <a class="detail-link" @click="toDetailEdit(course.classId)">修正</a>
+                    </el-card>
+                </div>
+                <div class="create-btn-container">
+                    <el-button 
+                        type="primary" 
+                        @click="toCreateCourse"
+                        icon="el-icon-plus">
+                        新規コース作り
+                    </el-button>
+                </div>
+            </el-main>
+        </el-container>
+    </el-container>
+</body>
+</html>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/element-ui/lib/umd/locale/ja.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+    ELEMENT.locale(ELEMENT.lang.ja);
+    let vm;
+    vm = new Vue({
+        el: "#app",
+        data() {
+            return {
+                courses: [],
+                category: [],
+                teacher: [],
+                data: [],
+                searchInfo: {}
+            };
+        },
+        mounted(){
+            this.loginCheck();
+
+            this.loadData();
+        },
+        methods: {
+            loginCheck() {
+                if (!isLogin()) return;
+            },
+            loadCourses() {
+                let self = this;
+                return new Promise((resolve, reject) => {
+                    axios({
+                        method: "POST",
+                        url: "/course/classes/get",
+                        withCredentials: true,
+                        data: self.searchInfo
+                    })
+                        .then((res = {}) => {
+                            const { data: { data: courses = [] } = {} } = res;
+                            self.courses = courses;
+                            resolve();
+                        })
+                });
+                
+            },
+            loadCategory() {
+                let self = this;
+                return new Promise((resolve, reject) => {
+                    axios({
+                        method: "GET",
+                        url: "/course/category",
+                        withCredentials: true
+                    })
+                        .then((res = {}) => {
+                            const { data: { data: category = [] } = {} } = res;
+                            self.category = category.map(item => {
+                                const {categoryId, categoryName} = item;
+                                return {
+                                    value: categoryId,
+                                    label: categoryName,
+                                    ...item
+                                };
+                            });
+                            resolve();
+                        })
+                });
+            },
+            loadTeacher() {
+                let self = this;
+                return new Promise((resolve, reject) => {
+                    axios({
+                        method: "GET",
+                        url: "/course/teacher/getAll",
+                        withCredentials: true
+                    })
+                        .then((res = {}) => {
+                            const { data: { data: teacher = [] } = {} } = res;
+                            self.teacher = teacher;
+                            self.teacher = teacher.map(item => {
+                                const {teacherId, teacherName} = item;
+                                return {
+                                    value: teacherId,
+                                    label: teacherName,
+                                    ...item
+                                };
+                            });
+                            resolve();
+                        })
+                });
+            },
+            async loadData() {
+                let self = this;
+                Promise.all([
+                    this.loadCategory(), 
+                    this.loadCourses(),
+                    this.loadTeacher(),
+                ])
+                    .then(() => {
+                        const data = self.courses.map(item => {
+                            const {
+                                categoryId, 
+                                teacherId, 
+                                ...others
+                            } = item;
+                            const categoryName = (self.category.find(c => c.categoryId == categoryId) || {}).categoryName;
+                            const teacherName = (self.teacher.find(t => t.teacherId == teacherId) || {}).teacherName;
+                            return {
+                                categoryName,
+                                teacherName,
+                                ...others
+                            };
+                        });
+                        self.data = data;
+                    })
+            },
+            toDetailEdit(courseId) {
+                window.location.href = `/html/courseEdit.html?id=${courseId}`;
+            },
+            toCreateCourse() {
+                window.location.href = "/html/courseCreate.html";
+            },
+            goTeacherManage() {
+                window.location.href = "/html/teacherManage.html";
+            }
+        }
+    });
+</script>

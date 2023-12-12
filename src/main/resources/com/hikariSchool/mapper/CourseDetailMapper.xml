@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hikariSchool.mapper.CourseDetailMapper">
+	<select id="getById">
+		select 
+			classId,
+			className,
+			it_classes.categoryId as categoryId,
+			categoryName,
+			description,
+			it_classes.teacherId as teacherId,
+			teacherName,
+			studentsLimit,
+			price
+				from it_classes INNER JOIN it_category ON it_classes.categoryId = it_category.categoryId INNER JOIN it_teacher ON it_classes.teacherId = it_teacher.teacherId
+					WHERE classid = #{classid};
+
+	</select>
+</mapper>

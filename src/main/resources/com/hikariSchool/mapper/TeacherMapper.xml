@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hikariSchool.mapper.TeacherMapper">
+	<select id="getAll">
+		select teacherId, teacherName from it_teacher;
+	</select>
+	
+	<select id="getTeacherClasses">
+		SELECT classId, className, itt.teacherId, teacherName  
+			FROM it_classes itc
+			INNER JOIN it_teacher itt ON itc.teacherId = itt.teacherId;
+	</select>
+</mapper>

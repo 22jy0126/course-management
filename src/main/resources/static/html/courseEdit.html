@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コース修正</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@300&family=Noto+Sans+JP:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/common.css">
+</head>
+<body>
+    <el-container id="app" class="manage">
+        <header class="common-header">
+            <div class="caption">
+                ひかりITスクール
+            </div>
+            <div>
+                管理者
+            </div>
+        </header>
+        <el-aside width="200px" class="side-menu">
+            <el-menu default-active="1" class="el-menu-vertical-demo">
+                <el-menu-item index="1">コース管理</el-menu-item>
+                <el-menu-item index="2">教員管理</el-menu-item>
+                <el-menu-item index="3">学生管理</el-menu-item>
+            </el-menu>
+        </el-aside>
+        <el-container class="comm-main">
+            <!-- <el-main> -->
+                <form class="course-edit-container">
+                    <div class="edit-item">
+                        <div class="label">コース名：</div>
+                        <el-input class="edit-input" v-model="courseInfo.className"></el-input>
+                    </div>
+                    <div class="edit-item">
+                        <div class="label">カテゴリー：</div>
+                        <el-select 
+                            v-model="courseInfo.categoryId" 
+                            class="search-input"
+                            clearable
+                        >
+                            <el-option
+                                v-for="item in category"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </div>
+                    <div class="edit-item">
+                        <div class="label">先&nbsp;&nbsp;生：</div>
+                        <el-select 
+                            v-model="courseInfo.teacherId" 
+                            class="search-input"
+                            clearable
+                        >
+                            <el-option
+                                v-for="item in teacher"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </div>
+                    <div class="edit-item">
+                        <div class="label">プロフィール：</div>
+                        <el-input :rows="2" type="textarea" class="edit-input" v-model="courseInfo.description"></el-input>
+                    </div>
+                    <div class="edit-item">
+                        <div class="label">値段：</div>
+                        <el-input-number v-model="courseInfo.price" :min="100" :max="9999999"></el-input-number>
+                    </div>
+                    <div class="edit-item">
+                        <div class="label">人数制限：</div>
+                        <el-input-number v-model="courseInfo.studentsLimit" :min="1" :max="999"></el-input-number>
+                    </div>
+                    <div class="edit-item edit-item-btn">
+                        <el-button type="primary" @click="courseUpdate">更新する</el-button>
+                        <el-button type="info" @click="backToHome">コース管理ページに戻る</el-button>
+                    </div>
+                </form>
+            <!-- </el-main> -->
+        </el-container>
+    </el-container>
+</body>
+</html>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/element-ui/lib/umd/locale/ja.js"></script>
+<script>
+    ELEMENT.locale(ELEMENT.lang.ja);
+    let vm;
+    vm = new Vue({
+        el: "#app",
+        data() {
+            return {
+                category: [],
+                teacher: [],
+                courseInfo: {}
+            };
+        },
+        mounted(){
+            this.loadData();
+        },
+        methods: {
+            loadCategory() {
+                let self = this;
+                return new Promise((resolve, reject) => {
+                    axios({
+                        method: "GET",
+                        url: "/course/category"
+                    })
+                        .then((res = {}) => {
+                            const { data: { data: category = [] } = {} } = res;
+                            self.category = category.map(item => {
+                                const {categoryId, categoryName} = item;
+                                return {
+                                    value: categoryId,
+                                    label: categoryName,
+                                    ...item
+                                };
+                            });
+                            resolve();
+                        })
+                });
+            },
+            loadTeacher() {
+                let self = this;
+                return new Promise((resolve, reject) => {
+                    axios({
+                        method: "GET",
+                        url: "/course/teacher/getAll"
+                    })
+                        .then((res = {}) => {
+                            const { data: { data: teacher = [] } = {} } = res;
+                            self.teacher = teacher;
+                            self.teacher = teacher.map(item => {
+                                const {teacherId, teacherName} = item;
+                                return {
+                                    value: teacherId,
+                                    label: teacherName,
+                                    ...item
+                                };
+                            });
+                            resolve();
+                        })
+                });
+            },
+            loadData() {
+                const url = new URL(window.location.href);
+                const params = url.searchParams;
+                const id = params.get("id");
+                let self = this;
+
+                Promise.all([
+                    this.loadCategory(),
+                    this.loadTeacher(),
+                ])
+                    .then(() => {
+                        axios({
+                            method: "GET",
+                            url: `/course/courseDetail/${id}`,
+                            data: self.courseInfo
+                        })
+                            .then((res = {}) => {
+                                const { data: { data: courseInfo = {} } = {} } = res;
+                                self.courseInfo = courseInfo;
+                            })
+                    });
+            },
+            courseUpdate() {
+                let self = this;
+                this.$alert('コースの情報を更新します、よろしいですか', '確認', {
+                    confirmButtonText: '更新',
+                    callback: action => {
+                        axios({
+                            method: "POST",
+                            url: `/course/classes/update`,
+                            data: self.courseInfo
+                        })
+                            .then(() => {
+                                this.$message({
+                                    message: 'コースの情報を更新しました！',
+                                    type: 'success'
+                                });
+                            })
+                    }
+                });
+            },
+            backToHome() {
+                window.location.href = "/html/classesmanage.html";
+            },
+        }
+    });
+</script>

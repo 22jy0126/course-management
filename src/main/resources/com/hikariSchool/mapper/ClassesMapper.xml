@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hikariSchool.mapper.ClassesMapper">
+	<select id="get">
+		select * from it_classes
+		<where>
+			<if test="className != null">
+				className like CONCAT('%', #{className}, '%')
+			</if>
+			<if test="categoryId!=null">
+				AND categoryId=#{categoryId}
+			</if>
+			<if test="teacherId!=null">
+				AND teacherId=#{teacherId}
+			</if>
+		</where>
+
+	</select>
+	<update id="updateById">
+		UPDATE it_classes 
+		<set>
+			<if test="className != null">
+				className=#{className}
+			</if>
+			<if test="categoryId != null">
+				,categoryId=#{categoryId}
+			</if>
+			<if test="teacherId != null">
+				,teacherId=#{teacherId}
+			</if>
+			<if test="description != null">
+				,description=#{description}
+			</if>
+			<if test="price != null">
+				,price=#{price}
+			</if>
+			<if test="studentsLimit != null">
+				,studentsLimit=#{studentsLimit}
+			</if>
+		</set>
+		<where>
+			classId=#{classId}
+		</where>
+	</update>
+	<insert id="saveNew">
+		INSERT INTO it_classes (
+			className,
+			categoryId,
+			description,
+			teacherId,
+			studentsLimit,
+			price
+		) VALUES (
+			#{className},
+			#{categoryId},
+			#{description},
+			#{teacherId},
+			#{studentsLimit},
+			#{price}
+		);
+	</insert>
+</mapper>
